@@ -1,0 +1,36 @@
+# KLayout DRC Script — SKY130 mini rule deck
+# Run:
+# klayout -b -r drc_rules.drc -rd input=layout.gds -rd output=results.xml
+
+source($input)
+report("SKY130 Mini DRC Report", $output)
+
+# SKY130-style layers
+li1   = input(67, 20)   # local interconnect
+nwell = input(64, 20)   # nwell
+nsdm  = input(93, 44)   # n+ source/drain implant
+mcon  = input(67, 44)   # metal contact
+
+# Rule 1: li1 minimum width = 0.17 um
+li1.width(0.17.um).output(
+  "LI.W.1",
+  "li1 minimum width violation: width < 0.17 um"
+)
+
+# Rule 2: li1 minimum spacing = 0.17 um
+li1.space(0.17.um).output(
+  "LI.S.1",
+  "li1 minimum spacing violation: spacing < 0.17 um"
+)
+
+# Rule 3: nwell must enclose nsdm by 0.125 um
+nsdm.enclosed(nwell, 0.125.um).output(
+  "NW.ENC.1",
+  "nwell enclosure violation: nwell enclosure of nsdm < 0.125 um"
+)
+
+# Rule 4: mcon minimum area = 0.2025 um^2
+mcon.with_area(0.0.um2, 0.2025.um2).output(
+  "MCON.A.1",
+  "mcon minimum area violation: area < 0.2025 um^2"
+)

@@ -1,0 +1,49 @@
+# =============================================================================
+# drc_rules.lydrc
+# SKY130 DRC rule deck for KLayout (batch mode)
+# =============================================================================
+#
+# Usage:
+#   klayout -b -r drc_rules.lydrc -rd input=layout.gds -rd output=results.xml
+#
+# -b                      run in batch mode (no GUI)
+# -r drc_rules.lydrc      load this rule deck
+# -rd input=...           define variable $input (the GDS file to check)
+# -rd output=...          define variable $output (XML report to write)
+#
+# The variables $input and $output MUST be supplied via -rd, otherwise KLayout
+# will error out on source()/report() below.
+# =============================================================================
+
+# --- Load input layout ------------------------------------------------------
+# $input is set from the command line: -rd input=<path>
+source($input)
+
+# --- Open the report database -----------------------------------------------
+# $output is set from the command line: -rd output=<path>
+# All subsequent .output(...) calls write to this report.
+report("SKY130 DRC Report", $output)
+
+# --- Layer definitions (SKY130 layer/datatype pairs) ------------------------
+li1   = input(67, 20)   # local interconnect
+nwell = input(64, 20)   # n-well
+nsdm  = input(93, 44)   # n+ source/drain implant
+mcon  = input(67, 44)   # metal contact (local-interconnect to metal1)
+
+# --- Rules ------------------------------------------------------------------
+
+# LI.W.1 : li1 minimum width = 0.17 um
+li1.width(0.17.um).output("LI.W.1", "li1 minimum width < 0.17 um")
+
+# LI.S.1 : li1 minimum spacing = 0.17 um
+li1.space(0.17.um).output("LI.S.1", "li1 minimum spacing < 0.17 um")
+
+# NW.ENC.1 : nwell must enclose nsdm by at least 0.125 um
+nwell.enclosing(nsdm, 0.125.um).output("NW.ENC.1",
+    "nwell does not enclose nsdm by 0.125 um")
+
+# MCON.A.1 : mcon minimum area = 0.2025 um^2
+# with_area(min, max) selects polygons whose area is in [min, max),
+# so (0.0, 0.2025) = anything smaller than the minimum allowed area.
+mcon.with_area(0.0, 0.2025).output("MCON.A.1",
+    "mcon area < 0.2025 um^2")

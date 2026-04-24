@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+
+results.xml
+drc_report.html
+violations.png
+klayout_log*.txt
+
+sky130_hd/
