@@ -1,0 +1,61 @@
+# =============================================================================
+# sky130_extra_rules.lydrc
+# Additional educational SKY130-style DRC rules for KLayout.
+# =============================================================================
+#
+# This file ADDS to the four core rules in the project root deck. It uses
+# the same -rd input=... -rd output=... convention so it can be run with:
+#
+#   klayout -b -r advanced/rules/sky130_extra_rules.lydrc \
+#                -rd input=layout.gds \
+#                -rd output=results_extra.xml
+#
+# WARNING — these are educational, not tapeout-certified values. Always
+# cross-check against the official SKY130 DRC manual before using any of
+# these numbers for a real chip. See rule_manifest.json for source notes.
+# =============================================================================
+
+# --- Load layout and open report --------------------------------------------
+source($input)
+report("SKY130 Extended DRC Report", $output)
+
+# --- Layer aliases (SKY130 layer/datatype pairs) ----------------------------
+# These match the SKY130 PDK GDS layer mapping.
+poly   = input(66, 20)   # poly
+licon1 = input(66, 44)   # poly/diff contact (educational name: VIA on diff/poly)
+mcon   = input(67, 44)   # local-interconnect-to-metal1 contact
+met1   = input(68, 20)   # metal1
+nwell  = input(64, 20)   # n-well
+
+# =============================================================================
+# Rules
+# =============================================================================
+
+# --- M1.W.1 : metal1 minimum width = 0.14 um ---------------------------------
+# Educational SKY130 'met1.w' value. Real signoff value may differ slightly
+# depending on PDK revision.
+met1.width(0.14.um).output("M1.W.1",
+    "metal1 minimum width < 0.14 um")
+
+# --- M1.S.1 : metal1 minimum spacing = 0.14 um -------------------------------
+met1.space(0.14.um).output("M1.S.1",
+    "metal1 minimum spacing < 0.14 um")
+
+# --- POLY.W.1 : poly minimum width = 0.15 um ---------------------------------
+poly.width(0.15.um).output("POLY.W.1",
+    "poly minimum width < 0.15 um")
+
+# --- POLY.S.1 : poly minimum spacing = 0.21 um -------------------------------
+poly.space(0.21.um).output("POLY.S.1",
+    "poly minimum spacing < 0.21 um")
+
+# --- VIA.ENC.1 : metal1 must enclose mcon by 0.03 um (educational) -----------
+# In practice, mcon and licon1 have different enclosure values; we use a
+# single conservative number here to keep the demo simple.
+met1.enclosing(mcon, 0.03.um).output("VIA.ENC.1",
+    "metal1 does not enclose mcon by 0.03 um")
+
+# --- NW.S.1 : nwell-to-nwell spacing = 1.27 um -------------------------------
+# Two adjacent nwells must keep a generous distance to avoid latch-up.
+nwell.space(1.27.um).output("NW.S.1",
+    "nwell minimum spacing < 1.27 um")

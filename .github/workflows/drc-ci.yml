@@ -1,0 +1,116 @@
+name: drc-ci
+
+# Triggers
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  drc-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ----------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ----------------------------------------------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      # ----------------------------------------------------------------
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            echo "requirements.txt not found — installing minimum set"
+            pip install matplotlib pandas jinja2 tabulate
+          fi
+
+      # ----------------------------------------------------------------
+      - name: Syntax-check Python sources
+        run: |
+          set -e
+          # Compile every .py we know about. Fails loudly if any file is broken.
+          python -m py_compile run_drc.py analyze_results.py
+          python -m py_compile advanced/lvs/lvs_compare.py
+
+      # ----------------------------------------------------------------
+      - name: Run LVS demo (PASS path)
+        run: |
+          python advanced/lvs/lvs_compare.py \
+            advanced/lvs/resistor_network.spice \
+            advanced/lvs/resistor_network_extracted.spice
+
+      # ----------------------------------------------------------------
+      - name: Run LVS demo (FAIL path with --inject-mismatch)
+        # Intentional FAIL: prove the comparator catches a real diff.
+        # We negate the exit code so the CI step itself succeeds.
+        run: |
+          set +e
+          python advanced/lvs/lvs_compare.py \
+            advanced/lvs/resistor_network.spice \
+            advanced/lvs/resistor_network_extracted.spice \
+            --inject-mismatch
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then
+            echo "ERROR: --inject-mismatch should have produced a non-zero exit code."
+            exit 1
+          fi
+          echo "OK: --inject-mismatch correctly returned exit code $rc"
+
+      # ----------------------------------------------------------------
+      - name: Validate the rule manifest JSON
+        run: |
+          python -c "import json, sys; \
+            json.load(open('advanced/rules/rule_manifest.json')); \
+            print('rule_manifest.json is valid JSON')"
+
+      # ----------------------------------------------------------------
+      - name: Try to analyze a sample results.xml (if one is committed)
+        # KLayout itself is NOT installed in this CI runner, so we cannot
+        # generate a fresh results.xml here. If one is committed, we still
+        # run the parser on it as a smoke test.
+        run: |
+          if [ -f results.xml ]; then
+            echo "Found results.xml — running analyze_results.py"
+            python analyze_results.py --input results.xml \
+                                      --html ci_drc_report.html \
+                                      --chart ci_violations.png
+          else
+            echo "No results.xml in the repo — skipping analyzer step."
+            echo "  (Run KLayout DRC locally to generate results.xml.)"
+          fi
+
+      # ----------------------------------------------------------------
+      - name: Note about KLayout
+        run: |
+          echo "::notice::KLayout DRC is not run in this CI workflow."
+          echo "::notice::To enable it, install KLayout in the runner (e.g. via"
+          echo "::notice::a Docker image such as efabless/openlane) and add a"
+          echo "::notice::'klayout -b -r drc_rules.lydrc ...' step. See"
+          echo "::notice::docs/CI_PIPELINE.md for guidance."
+
+      # ----------------------------------------------------------------
+      - name: Upload reports as artifacts (if generated)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drc-reports
+          path: |
+            ci_drc_report.html
+            ci_violations.png
+            drc_report.html
+            violations.png
+            results.xml
+          if-no-files-found: ignore
+          retention-days: 14

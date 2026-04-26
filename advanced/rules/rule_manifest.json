@@ -1,0 +1,55 @@
+{
+  "deck_name": "sky130_extra_rules",
+  "version": "0.1",
+  "warning": "Educational values inspired by the public SKY130 PDK. NOT tapeout-certified. Always cross-check against the official SKY130 DRC manual before relying on these numbers for any real design.",
+  "rules": [
+    {
+      "rule_id": "M1.W.1",
+      "layer": "met1 (68/20)",
+      "check_type": "min_width",
+      "value_um": 0.14,
+      "description": "metal1 minimum width",
+      "source_note": "Educational; cross-check sky130_fd_pr DRC manual."
+    },
+    {
+      "rule_id": "M1.S.1",
+      "layer": "met1 (68/20)",
+      "check_type": "min_spacing",
+      "value_um": 0.14,
+      "description": "metal1 minimum spacing",
+      "source_note": "Educational; cross-check sky130_fd_pr DRC manual."
+    },
+    {
+      "rule_id": "POLY.W.1",
+      "layer": "poly (66/20)",
+      "check_type": "min_width",
+      "value_um": 0.15,
+      "description": "poly minimum width",
+      "source_note": "Educational; SKY130 channel-length-class value."
+    },
+    {
+      "rule_id": "POLY.S.1",
+      "layer": "poly (66/20)",
+      "check_type": "min_spacing",
+      "value_um": 0.21,
+      "description": "poly minimum spacing",
+      "source_note": "Educational; cross-check sky130 poly.s rules."
+    },
+    {
+      "rule_id": "VIA.ENC.1",
+      "layer": "met1 enclosing mcon (68/20 over 67/44)",
+      "check_type": "enclosure",
+      "value_um": 0.03,
+      "description": "metal1 must enclose mcon",
+      "source_note": "Educational simplification; real PDK uses different values for mcon vs. licon1."
+    },
+    {
+      "rule_id": "NW.S.1",
+      "layer": "nwell (64/20)",
+      "check_type": "min_spacing",
+      "value_um": 1.27,
+      "description": "nwell minimum spacing",
+      "source_note": "Latch-up oriented; conservative educational value."
+    }
+  ]
+}
